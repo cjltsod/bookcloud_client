@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Control Panel</title>
+</head>
+<body>
+<form action="{% url 'RPiCommandHandler' %}" method="post">
+    <input type="hidden" name="come_from" value="{{ request.path }}">
+    <input type="submit" name="command" value="pause">
+    <input type="submit" name="command" value="next">
+    <input type="submit" name="command" value="stop">
+    <input type="submit" name="command" value="mute">
+    <input type="submit" name="command" value="inc_vol">
+    <input type="submit" name="command" value="dec_vol">
+    <input type="submit" name="command" value="back_600">
+    <input type="submit" name="command" value="back_30">
+    <input type="submit" name="command" value="forward_30">
+    <input type="submit" name="command" value="forward_600">
+    <input type="submit" name="command" value="inc_speed">
+    <input type="submit" name="command" value="dec_speed">
+    <input type="submit" name="command" value="reboot">
+    <input type="submit" name="command" value="update">
+</form>
+<hr>
+<p>{{ request.GET.message }}</p>
+
+</body>
+</html>
