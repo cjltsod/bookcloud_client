@@ -6,7 +6,7 @@ verify_ssl = true
 [dev-packages]
 
 [packages]
-fido2 = "*"
+fido2 = {extras = ["pcsc"],version = "*"}
 requests = "*"
 netifaces = "*"
 pyomxplayer = {editable = true,git = "https://github.com/cjltsod/pyomxplayer.git"}
