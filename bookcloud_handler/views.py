@@ -8,17 +8,17 @@ import json
 
 from bookcloud_client.wsgi import command_queue, download_queue
 
+
 # Create your views here.
 
 
 def rpi_s3download_handler_view(request):
     come_from = request.POST.get('come_from', request.GET.get('come_from', None))
     response = requests.post(
-        'https://localhost.bookcloud.com.tw/rpi/api/cmd_resolve', data={
+        'https://console.bookcloud.com.tw/rpi/api/cmd_resolve', data={
             'access_key': os.environ.get('BOOKCLOUD_ACCESS_KEY'),
             'cmd_token': request.GET['cmd_token'],
         },
-        verify=False,
     )
 
     resposne_json = json.loads(response.content)

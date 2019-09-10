@@ -6,6 +6,7 @@ import subprocess
 import sys
 import threading
 import time
+import json
 from urllib.parse import urlparse
 
 import netifaces
@@ -17,9 +18,9 @@ from fido2.hid import CtapHidDevice
 from fido2.utils import websafe_encode
 from pyomxplayer import OMXPlayer
 
-AUTHENTICATE_BEGIN_URI = 'https://localhost.bookcloud.com.tw/rpi/api/authenticate_begin?rpi_username={}'
-AUTHENTICATE_COMPLETE_URI = 'https://localhost.bookcloud.com.tw/rpi/api/authenticate_complete?rpi_username={}'
-HEARTBEAT_URI = 'https://localhost.bookcloud.com.tw/rpi/api/status_update'
+AUTHENTICATE_BEGIN_URI = 'https://console.bookcloud.com.tw/rpi/api/authenticate_begin?rpi_username={}'
+AUTHENTICATE_COMPLETE_URI = 'https://console.bookcloud.com.tw/rpi/api/authenticate_complete?rpi_username={}'
+HEARTBEAT_URI = 'https://console.bookcloud.com.tw/rpi/api/status_update'
 
 
 def create_fido2_client(origin):
@@ -123,7 +124,6 @@ class ThreadHeartbeat(threading.Thread):
 
     def run(self):
         time.sleep(5)
-        print('ThreadHeartbeat is testing...')
         if not self.test_self_connect():
             logging.critical('Exception happened when self connecting.')
             logging.critical('Restarting services...')
@@ -131,8 +131,6 @@ class ThreadHeartbeat(threading.Thread):
             sys.exit(1)
 
         while True:
-            print('ThreadHeartbeat is running...')
-
             short_sleep = False
             try:
                 data = {}
@@ -181,14 +179,9 @@ class ThreadHeartbeat(threading.Thread):
                 except Exception as e:
                     logging.exception(e)
 
-                print(self.access_key)
-                print(data)
-                print(self.heartbeat_uri)
-                import json
-                requests.post(self.heartbeat_uri, data={'data': json.dumps(data), 'access_key': self.access_key}, verify=False)
+                requests.post(self.heartbeat_uri, data={'data': json.dumps(data), 'access_key': self.access_key})
             except Exception as e:
                 logging.exception(e)
-                print('Exception happened when heartbeat.')
                 short_sleep = True
 
             if short_sleep:
@@ -221,9 +214,7 @@ class ThreadCommand(threading.Thread):
 
     def run(self):
         while True:
-            print('ThreadCommand is waiting for command_queue')
             cmd = self.command_queue.get()
-            print('ThreadCommand running... {}'.format(cmd))
             if cmd not in ['reboot', 'update']:
                 try:
                     omx = self.player_queue.get(timeout=3)
@@ -239,10 +230,8 @@ class ThreadCommand(threading.Thread):
                     if not self.playlist_queue.empty():
                         omx.stop()  # Stop playing cause playlist thread push another video in
                 elif cmd == 'stop':
-                    print('Empty queue')
                     self.empty_queue(self.playlist_queue)
                     self.empty_queue(self.download_queue)
-                    print('Stop downloading')
                     try:
                         downloading_thread = self.downloading_queue.get_nowait()
                         downloading_thread.stop = True
@@ -250,7 +239,6 @@ class ThreadCommand(threading.Thread):
                         self.downloading_queue.task_done()
                     except queue.Empty:
                         pass
-                    print('Stop player')
                     if omx:
                         omx.stop()
                 elif cmd == 'mute' and omx:
@@ -273,7 +261,6 @@ class ThreadCommand(threading.Thread):
                 if omx:
                     self.player_queue.put(omx)
                     self.player_queue.task_done()
-            print('ThreadCommand task done...')
             self.command_queue.task_done()
 
 
@@ -285,10 +272,6 @@ class ThreadPlayer(threading.Thread):
         threading.Thread.__init__(self)
 
     def run(self):
-        print('ThreadPlayer running... Dummy playing {}'.format(self.path))
-        #time.sleep(60)
-        #return
-
         omx = OMXPlayer(self.path, args=self.args)
         self.player_queue.put(omx)
         omx.toggle_pause()
@@ -299,7 +282,6 @@ class ThreadPlayer(threading.Thread):
             if not omx.is_running():
                 self.player_queue.get()
                 self.player_queue.task_done()
-                print('ThreadPlayer task done...')
                 break
             elif not omx.paused and omx.position == last_position:
                 wait_time = wait_time - 1
@@ -317,9 +299,7 @@ class ThreadPlaylist(threading.Thread):
 
     def run(self):
         while True:
-            print('ThreadPlaylist is waiting for playlist_queue')
             path = self.playlist_queue.get()
-            print('ThreadPlaylist running...')
             current_thread = ThreadPlayer(self.player_queue, path)
             current_thread.start()
             current_thread.join()
@@ -335,8 +315,8 @@ class ThreadDownloading(threading.Thread):
         super(ThreadDownloading, self).__init__()
 
     def run(self):
-        print('ThreadDownloading running...')
         local_filename = self.download_url.split('/')[-1]
+        local_filename = local_filename.split('?')[0]
         if self.download_dest:
             local_filename = '{}/{}'.format(self.download_dest.rstrip('/'), local_filename)
         with requests.get(self.download_url, stream=True) as r:
@@ -366,10 +346,9 @@ class ThreadDownload(threading.Thread):
 
     def run(self):
         while True:
-            print('ThreadDownload is waiting for download_queue')
             path = self.download_queue.get()
-            print('ThreadDownload running...')
             filename = path.split('/')[-1]
+            filename = filename.split('?')[0]
             current_thread = ThreadDownloading(path, download_dest='/tmp/')
             self.downloading_queue.put(current_thread)
             current_thread.start()

@@ -19,7 +19,6 @@ from selenium.webdriver.chrome.options import Options
 from . import settings
 from . import threads
 
-
 command_queue = queue.Queue()
 playlist_queue = queue.Queue()
 player_queue = queue.Queue()
@@ -42,12 +41,11 @@ web_driver = webdriver.Chrome(options=web_driver_options)
 web_driver.get('file:///home/pi/bookcloud_client/assets/security_key.png')
 
 try:
-    access_key = threads.get_access_key('tsod', False)
+    access_key = threads.get_access_key('rpitv_1381633462')
 except Exception as e:
-    pass
+    raise
 
 web_driver.get('https://via.placeholder.com/1920x1080.png?text=Here we Go')
-
 
 download_thread = threads.ThreadDownload(download_queue, downloading_queue, playlist_queue)
 playlist_thread = threads.ThreadPlaylist(playlist_queue, player_queue)
@@ -63,10 +61,6 @@ os.environ.setdefault('BOOKCLOUD_ACCESS_KEY', access_key)
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', settings)
 
 application = get_wsgi_application()
-
-# download_queue.put('http://http.speed.hinet.net/test_100m.zip')
-# download_queue.put('http://http.speed.hinet.net/test_100m.zip')
-# download_queue.put('http://http.speed.hinet.net/test_100m.zip')
 
 download_thread.start()
 playlist_thread.start()
