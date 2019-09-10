@@ -211,6 +211,7 @@ class ThreadCommand(threading.Thread):
     def update():
         subprocess.call(['git', 'checkout', '--', '.'], shell=False)
         subprocess.call(['git', 'pull'], shell=False)
+        subprocess.call(['chmod', 'u+x', './boot.sh'])
 
     def run(self):
         while True:
