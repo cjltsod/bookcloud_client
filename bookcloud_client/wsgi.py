@@ -9,7 +9,6 @@ https://docs.djangoproject.com/en/2.2/howto/deployment/wsgi/
 
 import os
 import queue
-import subprocess
 
 from django.core.wsgi import get_wsgi_application
 
@@ -31,6 +30,8 @@ settings.player_queue = player_queue
 settings.download_queue = download_queue
 settings.downloading_queue = downloading_queue
 
+tv_no = threads.ThreadHeartbeat.get_teamviewer_no()
+
 web_driver_options = Options()
 web_driver_options.add_argument('--kiosk')
 web_driver_options.add_argument('--disable-infobars')
@@ -41,7 +42,7 @@ web_driver = webdriver.Chrome(options=web_driver_options)
 web_driver.get('file:///home/pi/bookcloud_client/assets/security_key.png')
 
 try:
-    access_key = threads.get_access_key('rpitv_1381633462')
+    access_key = threads.get_access_key('rpitv_{}'.format(tv_no))
 except Exception as e:
     raise
 
